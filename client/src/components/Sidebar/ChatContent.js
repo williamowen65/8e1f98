@@ -18,6 +18,14 @@ const useStyles = makeStyles((theme) => ({
     color: "#9CADC8",
     letterSpacing: -0.17,
   },
+  unseen: {
+    background: '#3A8DFF',
+    alignSelf: 'center',
+    borderRadius: '50px',
+    lineHeight: '25px',
+    paddingInline: "8px",
+    color: "white"
+  }
 }));
 
 const ChatContent = ({ conversation }) => {
@@ -25,6 +33,13 @@ const ChatContent = ({ conversation }) => {
 
   const { otherUser } = conversation;
   const latestMessageText = conversation.id && conversation.latestMessageText;
+
+  const unseen = conversation.messages.reduce((prev, curr) => {
+    if(curr.viewed === false && curr.senderId === otherUser.id){
+      return ++prev
+    }
+    return prev
+  }, 0)
 
   return (
     <Box className={classes.root}>
@@ -36,6 +51,7 @@ const ChatContent = ({ conversation }) => {
           {latestMessageText}
         </Typography>
       </Box>
+      {unseen > 0 && <Box className={classes.unseen}>{unseen}</Box>}
     </Box>
   );
 };

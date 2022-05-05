@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import { Box } from '@material-ui/core';
 import { Input, Header, Messages } from './index';
@@ -24,6 +24,7 @@ const ActiveChat = ({
   conversations,
   activeConversation,
   postMessage,
+  seeMessages
 }) => {
   const classes = useStyles();
 
@@ -36,6 +37,12 @@ const ActiveChat = ({
   const isConversation = (obj) => {
     return obj !== {} && obj !== undefined;
   };
+
+  useEffect(() => {
+    if(isConversation(conversation)){
+      seeMessages(conversation.id)
+    }
+  }, [conversation])
 
   return (
     <Box className={classes.root}>

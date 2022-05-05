@@ -49,6 +49,33 @@ const Home = ({ user, logout }) => {
     setConversations((prev) => prev.filter((convo) => convo.id));
   };
 
+  const seeMessages = useCallback((conversationId) => {
+    //update local state,
+  
+    setConversations((prev) => prev.map(convo => {
+      if(conversationId === convo.id){
+        convo.messages = convo.messages.map(el => {
+          if(user.id !== el.senderId){
+            el.viewed = true
+          }
+          return el
+        })
+      }
+      return convo
+    }))
+
+    // update database
+    const updateDB = async () => {
+      try {
+        await axios.put('/api/messages', {conversationId})
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    updateDB()
+    
+  }, [setConversations, conversations])
+
   const saveMessage = async (body) => {
     const { data } = await axios.post('/api/messages', body);
     return data;
@@ -62,9 +89,9 @@ const Home = ({ user, logout }) => {
     });
   };
 
-  const postMessage = (body) => {
+  const postMessage = async (body) => {
     try {
-      const data = saveMessage(body);
+      const data = await saveMessage(body);
 
       if (!body.conversationId) {
         addNewConvo(body.recipientId, data.message);
@@ -105,14 +132,13 @@ const Home = ({ user, logout }) => {
         newConvo.latestMessageText = message.text;
         setConversations((prev) => [newConvo, ...prev]);
       }
-
-      conversations.forEach((convo) => {
+      setConversations((prev) => prev.map((convo) => {
         if (convo.id === message.conversationId) {
           convo.messages.push(message);
           convo.latestMessageText = message.text;
         }
-      });
-      setConversations(conversations);
+        return convo
+      }));
     },
     [setConversations, conversations]
   );
@@ -216,6 +242,7 @@ const Home = ({ user, logout }) => {
           conversations={conversations}
           user={user}
           postMessage={postMessage}
+          seeMessages={seeMessages}
         />
       </Grid>
     </>
