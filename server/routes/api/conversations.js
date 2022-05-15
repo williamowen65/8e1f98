@@ -18,7 +18,7 @@ router.get("/", async (req, res, next) => {
           user2Id: userId,
         },
       },
-      attributes: ["id"],
+      attributes: ["id", "unseen"],
       order: [["updatedAt", "DESC"], [Message,"createdAt", "ASC"]],
       include: [
         { model: Message, order: ["createdAt", "ASC"] },

@@ -84,6 +84,8 @@ const Home = ({ user, logout }) => {
             convoCopy.messages = [...convoCopy.messages, message];
             convoCopy.latestMessageText = message.text;
             convoCopy.id = message.conversationId;
+            convoCopy.unseen = [message.id]
+            convoCopy.myUnseen = []
             return convoCopy
           }
           return convo
@@ -102,6 +104,8 @@ const Home = ({ user, logout }) => {
           id: message.conversationId,
           otherUser: sender,
           messages: [message],
+          unseen: [message.id],
+          myUnseen: []
         };
         newConvo.latestMessageText = message.text;
         setConversations((prev) => [newConvo, ...prev]);
@@ -114,24 +118,28 @@ const Home = ({ user, logout }) => {
           const convo = prevCopy.splice(convoIndex,1)[0]
           const convoCopy = {...convo};
           convoCopy.messages.push(message);
+          convoCopy.unseen.push(message.id)
           convoCopy.latestMessageText = message.text;
           return [convoCopy, ...prevCopy]
         }
           return prev
         });
       },
-      // setConversations((prev) => prev.map(convo => {
-      //   if(convo.id === message.conversationId){
-      //     const convoCopy = {...convo};
-      //     convoCopy.messages = [...convoCopy.messages, message]
-      //     convoCopy.latestMessageText = message.text
-      //     return convoCopy
-      //   }
-      //   return convo
-      // }));
-      // },
+ 
     []
   );
+
+  const registerMyUnseen = (convo) => {
+    const convoCopy = {...convo}
+    convoCopy.myUnseen = convoCopy.unseen.filter(el => {
+      const msg = convoCopy.messages.find(msg => msg.id === el)
+      if(msg.senderId !== user.id){
+        return true
+      }
+      return false
+    })
+    return convoCopy
+  }
 
   const setActiveChat = (username) => {
     setActiveConversation(username);
@@ -185,7 +193,6 @@ const Home = ({ user, logout }) => {
   useEffect(() => {
     // when fetching, prevent redirect
     if (user?.isFetching) return;
-
     if (user && user.id) {
       setIsLoggedIn(true);
     } else {
@@ -198,7 +205,9 @@ const Home = ({ user, logout }) => {
   useEffect(() => {
     const fetchConversations = async () => {
       try {
-        const { data } = await axios.get('/api/conversations');
+        let { data } = await axios.get('/api/conversations');
+        data = data.map(el => registerMyUnseen(el))
+        console.log(data, 'on fetch')
         setConversations(data);
       } catch (error) {
         console.error(error);
