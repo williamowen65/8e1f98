@@ -19,9 +19,8 @@ const Messages = (props) => {
       {messages.map((message, i) => {
         const time = moment(message.createdAt).format('h:mm');
         const isLatestMsg = userLastMessageIdx === i
-        console.log(isLatestMsg);
         return message.senderId === userId ? (
-          <SenderBubble key={message.id} text={message.text} time={time} otherUser={otherUser} isLatestMsg={isLatestMsg}/>
+          <SenderBubble key={message.id} text={message.text} time={time} otherUser={otherUser} isLatestMsg={isLatestMsg} viewed={message.viewed}/>
         ) : (
           <OtherUserBubble
             key={message.id}
