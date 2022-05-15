@@ -26,23 +26,34 @@ async function seed() {
   const santaigoConvo = await Conversation.create({
     user1Id: thomas.id,
     user2Id: santiago.id,
+    unseen: []
   });
 
-  await Message.create({
+  const m1 = await Message.create({
     conversationId: santaigoConvo.id,
     senderId: santiago.id,
     text: "Where are you from?",
   });
-  await Message.create({
+  const m2 = await Message.create({
     conversationId: santaigoConvo.id,
     senderId: thomas.id,
     text: "I'm from New York",
   });
-  await Message.create({
+  const m3 = await Message.create({
     conversationId: santaigoConvo.id,
     senderId: santiago.id,
     text: "Share photo of your city, please",
   });
+
+  await Conversation.update(
+    {
+    unseen: [m1.id, m2.id, m3.id]
+    },
+    {
+      where: {
+      id: santaigoConvo.id
+    }
+  })
 
   const chiumbo = await User.create({
     username: "chiumbo",
@@ -54,12 +65,22 @@ async function seed() {
   const chiumboConvo = await Conversation.create({
     user1Id: chiumbo.id,
     user2Id: thomas.id,
+    unseen: []
   });
-  await Message.create({
+  const m4 = await Message.create({
     conversationId: chiumboConvo.id,
     senderId: chiumbo.id,
     text: "Sure! What time?",
   });
+  await Conversation.update(
+    {
+    unseen: [m4.id]
+    },
+    {
+      where: {
+      id: chiumboConvo.id
+    }
+  })
 
   const hualing = await User.create({
     username: "hualing",
@@ -71,21 +92,33 @@ async function seed() {
   const hualingConvo = await Conversation.create({
     user2Id: hualing.id,
     user1Id: thomas.id,
+    unseen: []
   });
 
+  const ids = []
   for (let i = 0; i < 11; i++) {
-    await Message.create({
+    const m1 = await Message.create({
       conversationId: hualingConvo.id,
       senderId: hualing.id,
       text: "a test message",
     });
+    ids.push(m1.id)
   }
 
-  await Message.create({
+  const m5 = await Message.create({
     conversationId: hualingConvo.id,
     senderId: hualing.id,
     text: "😂 😂 😂",
   });
+  await Conversation.update(
+    {
+    unseen: [...ids, m5.id]
+    },
+    {
+      where: {
+      id: hualingConvo.id
+    }
+  })
 
   const otherUsers = await Promise.all([
     ,

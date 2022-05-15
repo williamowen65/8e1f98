@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const { Conversation, Message } = require("../../db/models");
 const onlineUsers = require("../../onlineUsers");
+const { Op } = require("sequelize");
 
 // expects {recipientId, text, conversationId } in body (conversationId will be null if no conversation exists yet)
 router.post("/", async (req, res, next) => {
@@ -22,6 +23,7 @@ router.post("/", async (req, res, next) => {
       conversation = await Conversation.create({
         user1Id: senderId,
         user2Id: recipientId,
+        unseen: []
       });
       if (onlineUsers.includes(sender.id)) {
         sender.online = true;
@@ -32,21 +34,46 @@ router.post("/", async (req, res, next) => {
       senderId,
       text,
       conversationId: conversation.id,
+      viewed: false
     });
 
-    async function triggerUpdateOnConversation() {
-      /* Is there a more direct way to update conversation */ 
-      const uid1 = conversation.user1Id
-      conversation.user1Id = 0;
-      conversation.user1Id = uid1;
-      await conversation.save();
-    }
-    triggerUpdateOnConversation()
+    conversation.unseen = [...conversation.unseen, message.id]
 
     res.json({ message, sender });
   } catch (error) {
     next(error);
   }
 });
+
+router.put('/update', async(req,res,next) => {
+  try {
+    const { conversationId, userIds, myUnseen} = req.body;
+    if (!req.user || !userIds.includes(req.user.id)) {
+      return res.sendStatus(401);
+    }
+    const veiwerId = req.user.id;
+    const messages = await Message.update(
+      {
+        viewed: true
+      },
+      {
+        where: {
+          conversationId: conversationId,
+          senderId: {
+            [Op.not]: veiwerId
+          },
+        },
+        returning: true
+      }
+    ).then(async function(result) {
+      const convo = await Conversation.findOne({where: {id: conversationId}})
+      convo.set({unseen: convo.unseen.filter(el => !myUnseen.includes(el))})
+      convo.save()
+    })
+    res.sendStatus(204)
+  } catch (error) {
+    next(error)
+  }
+})
 
 module.exports = router;

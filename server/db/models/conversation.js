@@ -1,8 +1,14 @@
-const { Op } = require("sequelize");
+const { Op, DataTypes } = require("sequelize");
+const Sequelize = require('sequelize')
 const db = require("../db");
 const Message = require("./message");
 
-const Conversation = db.define("conversation", {});
+const Conversation = db.define("conversation", {
+  unseen: {
+    type: Sequelize.ARRAY(DataTypes.INTEGER),
+    allowNull: false
+  }
+});
 
 // find conversation given two user Ids
 
