@@ -39,15 +39,6 @@ router.post("/", async (req, res, next) => {
 
     conversation.unseen = [...conversation.unseen, message.id]
 
-    // async function triggerUpdateOnConversation() {
-    //   /* Is there a more direct way to update conversation */ 
-    //   const uid1 = conversation.user1Id
-    //   conversation.user1Id = 0;
-    //   conversation.user1Id = uid1;
-    //   await conversation.save();
-    // }
-    // triggerUpdateOnConversation()
-
     res.json({ message, sender });
   } catch (error) {
     next(error);

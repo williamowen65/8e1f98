@@ -31,10 +31,11 @@ const useStyles = makeStyles((theme) => ({
   }
 }));
 
-const ChatContent = ({ conversation}) => {
+const ChatContent = ({ conversation, user}) => {
   const classes = useStyles();
 
   const viewed = conversation?.messages[conversation?.messages?.length - 1]?.viewed
+  const isNotMine = conversation?.messages[conversation?.messages?.length - 1]?.senderId !== user.id
 
   const { otherUser } = conversation;
   const latestMessageText = conversation.id && conversation.latestMessageText;
@@ -45,7 +46,7 @@ const ChatContent = ({ conversation}) => {
         <Typography className={classes.username}>
           {otherUser.username}
         </Typography>
-        <Typography className={`${classes.previewText} ${viewed === false && classes.bold}`}>
+        <Typography className={`${classes.previewText} ${viewed === false && isNotMine && classes.bold}`}>
           {latestMessageText}
         </Typography>
       </Box>
