@@ -79,14 +79,18 @@ const Home = ({ user, logout }) => {
   const addNewConvo = useCallback(
     (recipientId, message) => {
       setConversations((prev) => prev.map((convo) => {
+        console.log(convo)
+        const convoCopy = {...convo}
           if (convo.otherUser.id === recipientId) {
-            const convoCopy = {...convo}
             convoCopy.messages = [...convoCopy.messages, message];
             convoCopy.latestMessageText = message.text;
             convoCopy.id = message.conversationId;
+            convoCopy.unseen = [message.id]
+            convoCopy.myUnseen = []
+            console.log('add new convo ', message, convoCopy);
             return convoCopy
           }
-          return convo
+          return convoCopy
         })
       );
     },
@@ -102,9 +106,11 @@ const Home = ({ user, logout }) => {
           id: message.conversationId,
           otherUser: sender,
           messages: [message],
+          unseen: [message.id],
+          myUnseen: [message.id]
         };
         newConvo.latestMessageText = message.text;
-        setConversations((prev) => [newConvo, ...prev]);
+        return setConversations((prev) => [newConvo, ...prev]);
       }
       
       setConversations((prev) => {
@@ -114,24 +120,90 @@ const Home = ({ user, logout }) => {
           const convo = prevCopy.splice(convoIndex,1)[0]
           const convoCopy = {...convo};
           convoCopy.messages.push(message);
+          convoCopy.unseen.push(message.id)
+          convoCopy.myUnseen.push(message.id)
           convoCopy.latestMessageText = message.text;
           return [convoCopy, ...prevCopy]
         }
           return prev
         });
       },
-      // setConversations((prev) => prev.map(convo => {
-      //   if(convo.id === message.conversationId){
-      //     const convoCopy = {...convo};
-      //     convoCopy.messages = [...convoCopy.messages, message]
-      //     convoCopy.latestMessageText = message.text
-      //     return convoCopy
-      //   }
-      //   return convo
-      // }));
-      // },
+ 
     []
   );
+
+  const updateMyUnseen = async (conversationId) => {
+    let myUnseen;
+    let userIds;
+    await setConversations((prev) => prev.map(convo => {
+      const convoCopy = {...convo}
+      if(conversationId === convo.id){
+        myUnseen = convoCopy.myUnseen
+        convoCopy.unseen = convoCopy.unseen.filter(el => !myUnseen.includes(el))
+        convoCopy.messages = convoCopy.messages.map(el => {
+          if(user.id !== el.senderId && el.viewed === false){
+            el.viewed = true
+            userIds = [user.id, el.senderId]
+          }
+          return el
+        })
+        convoCopy.myUnseen = []
+      }
+      return convoCopy
+    }))
+    return { myUnseen, userIds }
+  }
+
+  const updateOtherUnseen = (conversationId, otherUserSaw) => {
+    setConversations((prev) => prev.map(convo => {
+      const convoCopy = {...convo}
+      if(conversationId === convo.id){
+        convoCopy.unseen = convoCopy.unseen.filter(el => !otherUserSaw.includes(el))
+        convoCopy.messages = convoCopy.messages.map(el => {
+          if(otherUserSaw.includes(el.id) && el.viewed === false){
+            el.viewed = true
+          }
+          return el
+        })
+      }
+      return convoCopy
+    }))
+  }
+
+  const seeMessages = useCallback(async (conversationId) => {
+    const { myUnseen, userIds } = await updateMyUnseen(conversationId)
+    if(userIds){
+      //updateDb
+      try {
+        await axios.put('/api/messages/update', {conversationId, userIds, myUnseen})
+        socket.emit("see-message", {
+              conversationId,
+              otherUserSaw: myUnseen
+            })
+      } catch (error) {
+        console.error(error);
+      }
+      //updateMessage
+    }
+  }, [user.id])
+
+  const otherUserSawMsgs = useCallback((data) => {
+    const { conversationId, otherUserSaw } = data;
+    console.log('other user saw ', conversationId, otherUserSaw, conversations);
+    updateOtherUnseen(conversationId, otherUserSaw)
+  },[])
+
+  const registerMyUnseen = (convo) => {
+    const convoCopy = {...convo}
+    convoCopy.myUnseen = convoCopy.unseen.filter(el => {
+      const msg = convoCopy.messages.find(msg => msg.id === el)
+      if(msg.senderId !== user.id){
+        return true
+      }
+      return false
+    })
+    return convoCopy
+  }
 
   const setActiveChat = (username) => {
     setActiveConversation(username);
@@ -172,6 +244,7 @@ const Home = ({ user, logout }) => {
     socket.on('add-online-user', addOnlineUser);
     socket.on('remove-offline-user', removeOfflineUser);
     socket.on('new-message', addMessageToConversation);
+    socket.on('see-message', otherUserSawMsgs);
 
     return () => {
       // before the component is destroyed
@@ -179,13 +252,13 @@ const Home = ({ user, logout }) => {
       socket.off('add-online-user', addOnlineUser);
       socket.off('remove-offline-user', removeOfflineUser);
       socket.off('new-message', addMessageToConversation);
+      socket.off('see-message', otherUserSawMsgs);
     };
-  }, [addMessageToConversation, addOnlineUser, removeOfflineUser, socket]);
+  }, [addMessageToConversation, addOnlineUser, removeOfflineUser, socket, otherUserSawMsgs]);
 
   useEffect(() => {
     // when fetching, prevent redirect
     if (user?.isFetching) return;
-
     if (user && user.id) {
       setIsLoggedIn(true);
     } else {
@@ -198,7 +271,9 @@ const Home = ({ user, logout }) => {
   useEffect(() => {
     const fetchConversations = async () => {
       try {
-        const { data } = await axios.get('/api/conversations');
+        let { data } = await axios.get('/api/conversations');
+        data = data.map(el => registerMyUnseen(el))
+        console.log(data, 'on fetch')
         setConversations(data);
       } catch (error) {
         console.error(error);
@@ -233,6 +308,7 @@ const Home = ({ user, logout }) => {
           conversations={conversations}
           user={user}
           postMessage={postMessage}
+          seeMessages={seeMessages}
         />
       </Grid>
     </>

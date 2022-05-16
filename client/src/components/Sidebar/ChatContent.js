@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Typography } from "@material-ui/core";
+import { Badge, Box, Typography } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 
 const useStyles = makeStyles((theme) => ({
@@ -18,10 +18,24 @@ const useStyles = makeStyles((theme) => ({
     color: "#9CADC8",
     letterSpacing: -0.17,
   },
+  unseen: {
+    margin: "0 10px",
+    '& span': {
+      transformOrigin: 'center center',
+      transform: 'scale(1) translate(0px, 100%)'
+    }
+  },
+  bold: {
+    fontWeight: 'bold',
+    color: "black"
+  }
 }));
 
-const ChatContent = ({ conversation }) => {
+const ChatContent = ({ conversation, user}) => {
   const classes = useStyles();
+
+  const viewed = conversation?.messages[conversation?.messages?.length - 1]?.viewed
+  const isNotMine = conversation?.messages[conversation?.messages?.length - 1]?.senderId !== user.id
 
   const { otherUser } = conversation;
   const latestMessageText = conversation.id && conversation.latestMessageText;
@@ -32,10 +46,11 @@ const ChatContent = ({ conversation }) => {
         <Typography className={classes.username}>
           {otherUser.username}
         </Typography>
-        <Typography className={classes.previewText}>
+        <Typography className={`${classes.previewText} ${viewed === false && isNotMine && classes.bold}`}>
           {latestMessageText}
         </Typography>
       </Box>
+      <Badge badgeContent={conversation?.myUnseen?.length} color="primary"  className={classes.unseen} />
     </Box>
   );
 };
