@@ -39,7 +39,7 @@ const ActiveChat = ({
   };
 
   useEffect(() => {
-    if(conversation?.myUnseen.length){
+    if(conversation?.myUnseen?.length){
       seeMessages(conversation.id)
     }
   }, [seeMessages, conversation])

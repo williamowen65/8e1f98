@@ -43,7 +43,7 @@ const ChatContent = ({ conversation }) => {
           {latestMessageText}
         </Typography>
       </Box>
-      <Badge badgeContent={conversation.myUnseen.length} color="primary"  className={classes.unseen} />
+      <Badge badgeContent={conversation?.myUnseen?.length} color="primary"  className={classes.unseen} />
     </Box>
   );
 };
