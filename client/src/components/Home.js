@@ -129,30 +129,50 @@ const Home = ({ user, logout }) => {
     []
   );
 
-  const seeMessages = useCallback(async (conversationId) => {
+  const updateMyUnseen = async (conversationId) => {
     let myUnseen;
     let userIds;
     await setConversations((prev) => prev.map(convo => {
+      const convoCopy = {...convo}
       if(conversationId === convo.id){
-        myUnseen = convo.myUnseen
-        convo.messages = convo.messages.map(el => {
+        myUnseen = convoCopy.myUnseen
+        convoCopy.unseen = convoCopy.unseen.filter(el => !myUnseen.includes(el))
+        convoCopy.messages = convoCopy.messages.map(el => {
           if(user.id !== el.senderId && el.viewed === false){
             el.viewed = true
             userIds = [user.id, el.senderId]
-            
-            // seeMessage({conversationId, messageId: el.id})
           }
           return el
         })
-        convo.myUnseen = []
+        convoCopy.myUnseen = []
       }
-      return convo
+      return convoCopy
     }))
+    return { myUnseen, userIds }
+  }
+
+  const updateOtherUnseen = (conversationId, otherUserSaw) => {
+    setConversations((prev) => prev.map(convo => {
+      const convoCopy = {...convo}
+      if(conversationId === convo.id){
+        convoCopy.unseen = convoCopy.unseen.filter(el => !otherUserSaw.includes(el))
+        convoCopy.messages = convoCopy.messages.map(el => {
+          if(otherUserSaw.includes(el.id) && el.viewed === false){
+            el.viewed = true
+          }
+          return el
+        })
+      }
+      return convoCopy
+    }))
+  }
+
+  const seeMessages = useCallback(async (conversationId) => {
+    const { myUnseen, userIds } = await updateMyUnseen(conversationId)
     if(userIds){
       //updateDb
       try {
         await axios.put('/api/messages/update', {conversationId, userIds, myUnseen})
-        console.log('socket emit');
         socket.emit("see-message", {
               conversationId,
               otherUserSaw: myUnseen
@@ -167,6 +187,7 @@ const Home = ({ user, logout }) => {
   const otherUserSawMsgs = useCallback((data) => {
     const { conversationId, otherUserSaw } = data;
     console.log('other user saw ', conversationId, otherUserSaw);
+    updateOtherUnseen(conversationId, otherUserSaw)
   },[])
 
   const registerMyUnseen = (convo) => {
