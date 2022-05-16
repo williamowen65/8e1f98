@@ -24,11 +24,17 @@ const useStyles = makeStyles((theme) => ({
       transformOrigin: 'center center',
       transform: 'scale(1) translate(0px, 100%)'
     }
+  },
+  bold: {
+    fontWeight: 'bold',
+    color: "black"
   }
 }));
 
-const ChatContent = ({ conversation }) => {
+const ChatContent = ({ conversation}) => {
   const classes = useStyles();
+
+  const viewed = conversation.messages[conversation.messages.length - 1].viewed
 
   const { otherUser } = conversation;
   const latestMessageText = conversation.id && conversation.latestMessageText;
@@ -39,7 +45,7 @@ const ChatContent = ({ conversation }) => {
         <Typography className={classes.username}>
           {otherUser.username}
         </Typography>
-        <Typography className={classes.previewText}>
+        <Typography className={`${classes.previewText} ${viewed === false && classes.bold}`}>
           {latestMessageText}
         </Typography>
       </Box>
