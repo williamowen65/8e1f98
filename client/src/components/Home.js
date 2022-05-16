@@ -105,7 +105,7 @@ const Home = ({ user, logout }) => {
           otherUser: sender,
           messages: [message],
           unseen: [message.id],
-          myUnseen: []
+          myUnseen: [message.id]
         };
         newConvo.latestMessageText = message.text;
         return setConversations((prev) => [newConvo, ...prev]);
