@@ -23,6 +23,7 @@ router.post("/", async (req, res, next) => {
       conversation = await Conversation.create({
         user1Id: senderId,
         user2Id: recipientId,
+        unseen: []
       });
       if (onlineUsers.includes(sender.id)) {
         sender.online = true;
@@ -33,16 +34,19 @@ router.post("/", async (req, res, next) => {
       senderId,
       text,
       conversationId: conversation.id,
+      viewed: false
     });
 
-    async function triggerUpdateOnConversation() {
-      /* Is there a more direct way to update conversation */ 
-      const uid1 = conversation.user1Id
-      conversation.user1Id = 0;
-      conversation.user1Id = uid1;
-      await conversation.save();
-    }
-    triggerUpdateOnConversation()
+    conversation.unseen = [...conversation.unseen, message.id]
+
+    // async function triggerUpdateOnConversation() {
+    //   /* Is there a more direct way to update conversation */ 
+    //   const uid1 = conversation.user1Id
+    //   conversation.user1Id = 0;
+    //   conversation.user1Id = uid1;
+    //   await conversation.save();
+    // }
+    // triggerUpdateOnConversation()
 
     res.json({ message, sender });
   } catch (error) {
