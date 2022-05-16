@@ -129,6 +129,45 @@ const Home = ({ user, logout }) => {
     []
   );
 
+  const seeMessages = useCallback(async (convoId) => {
+    console.log('seeing messages', convoId);
+    let userIds;
+    await setConversations((prev) => prev.map(convo => {
+      if(convoId === convo.id){
+        convo.messages = convo.messages.map(el => {
+          if(user.id !== el.senderId && el.viewed === false){
+            el.viewed = true
+            userIds = [user.id, el.senderId]
+            socket.emit("see-message", {
+              conversationId: convo.id,
+              messageId: el.id
+            })
+            // seeMessage({conversationId, messageId: el.id})
+          }
+          return el
+        })
+        convo.myUnseen = []
+      }
+      return convo
+    }))
+    if(userIds){
+      //updateDb
+      //updateMessage
+    }
+  }, [user.id])
+
+  // const removeSeen = (convo) => {
+  //   const convoCopy = {...convo}
+  //   convoCopy.myUnseen = convoCopy.unseen.filter(el => {
+  //     const msg = convoCopy.messages.find(msg => msg.id === el)
+  //     if(msg.senderId !== user.id){
+  //       return true
+  //     }
+  //     return false
+  //   })
+  //   return convoCopy
+  // }
+
   const registerMyUnseen = (convo) => {
     const convoCopy = {...convo}
     convoCopy.myUnseen = convoCopy.unseen.filter(el => {
@@ -242,6 +281,7 @@ const Home = ({ user, logout }) => {
           conversations={conversations}
           user={user}
           postMessage={postMessage}
+          seeMessages={seeMessages}
         />
       </Grid>
     </>

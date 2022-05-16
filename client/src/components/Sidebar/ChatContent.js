@@ -22,7 +22,7 @@ const useStyles = makeStyles((theme) => ({
     margin: "0 10px",
     '& span': {
       transformOrigin: 'center center',
-      transform: 'translate(0px, 100%)'
+      transform: 'scale(1) translate(0px, 100%)'
     }
   }
 }));
