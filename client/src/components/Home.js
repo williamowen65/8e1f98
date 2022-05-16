@@ -119,6 +119,7 @@ const Home = ({ user, logout }) => {
           const convoCopy = {...convo};
           convoCopy.messages.push(message);
           convoCopy.unseen.push(message.id)
+          convoCopy.myUnseen.push(message.id)
           convoCopy.latestMessageText = message.text;
           return [convoCopy, ...prevCopy]
         }
